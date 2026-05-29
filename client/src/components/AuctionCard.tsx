@@ -1,15 +1,28 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Auction } from '../types';
 import { CategoryLabels, StatusLabels } from '../types';
+
+const DAY_IN_MS = 1000 * 60 * 60 * 24;
+const MINUTE_IN_MS = 1000 * 60;
 
 interface Props {
   auction: Auction;
 }
 
 export default function AuctionCard({ auction }: Props) {
+  const [now, setNow] = useState(() => new Date().getTime());
   const isActive = auction.status === 1;
-  const timeLeft = new Date(auction.endDate).getTime() - Date.now();
-  const daysLeft = Math.max(0, Math.floor(timeLeft / (1000 * 60 * 60 * 24)));
+  const timeLeft = new Date(auction.endDate).getTime() - now;
+  const daysLeft = Math.max(0, Math.floor(timeLeft / DAY_IN_MS));
+
+  useEffect(() => {
+    const timerId = window.setInterval(() => {
+      setNow(new Date().getTime());
+    }, MINUTE_IN_MS);
+
+    return () => window.clearInterval(timerId);
+  }, []);
 
   return (
     <Link

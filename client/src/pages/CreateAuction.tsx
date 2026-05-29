@@ -1,21 +1,32 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createAuction } from '../api/auctions';
+import { getApiErrorMessage } from '../api/errors';
 import { CategoryLabels } from '../types';
+
+const WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000;
+
+const toDatetimeLocalValue = (date: Date) => date.toISOString().slice(0, 16);
+
+const getInitialForm = () => {
+  const startDate = new Date();
+  const endDate = new Date(startDate.getTime() + WEEK_IN_MS);
+
+  return {
+    title: '',
+    description: '',
+    category: 0,
+    startingPrice: '',
+    startDate: toDatetimeLocalValue(startDate),
+    endDate: toDatetimeLocalValue(endDate),
+  };
+};
 
 export default function CreateAuction() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    category: 0,
-    startingPrice: '',
-    startDate: new Date().toISOString().slice(0, 16),
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-  });
+  const [form, setForm] = useState(getInitialForm);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,8 +43,8 @@ export default function CreateAuction() {
         endDate: new Date(form.endDate).toISOString(),
       });
       navigate(`/auction/${auction.id}`);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Błąd tworzenia aukcji');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Błąd tworzenia aukcji'));
     } finally {
       setLoading(false);
     }

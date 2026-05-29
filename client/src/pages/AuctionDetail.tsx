@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getAuction, placeBid } from '../api/auctions';
+import { getApiErrorMessage } from '../api/errors';
 import { useAuth } from '../hooks/useAuth';
 import type { AuctionDetail as AuctionDetailType } from '../types';
 import { CategoryLabels, StatusLabels } from '../types';
@@ -42,8 +43,8 @@ export default function AuctionDetail() {
       const updated = await getAuction(id);
       setAuction(updated);
       setBidAmount((updated.currentPrice + 1).toFixed(2));
-    } catch (err: any) {
-      setBidError(err.response?.data?.message || 'Błąd składania oferty');
+    } catch (err: unknown) {
+      setBidError(getApiErrorMessage(err, 'Błąd składania oferty'));
     } finally {
       setBidding(false);
     }

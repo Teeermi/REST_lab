@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../api/auth';
+import { getApiErrorMessage } from '../api/errors';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Register() {
@@ -21,8 +22,8 @@ export default function Register() {
       const data = await register(email, username, password);
       auth.login(data.token, data.user);
       navigate('/');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Błąd rejestracji');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Błąd rejestracji'));
     } finally {
       setLoading(false);
     }

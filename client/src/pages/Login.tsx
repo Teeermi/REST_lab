@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../api/auth';
+import { getApiErrorMessage } from '../api/errors';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
@@ -20,8 +21,8 @@ export default function Login() {
       const data = await login(email, password);
       auth.login(data.token, data.user);
       navigate('/');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Błąd logowania');
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Błąd logowania'));
     } finally {
       setLoading(false);
     }

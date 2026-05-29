@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import type { User } from '../types';
 
 interface AuthContextType {
@@ -9,6 +9,11 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
+interface AuthState {
+  user: User | null;
+  token: string | null;
+}
+
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const useAuth = () => {
@@ -17,31 +22,44 @@ export const useAuth = () => {
   return context;
 };
 
-export const useAuthState = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+const emptyAuthState: AuthState = {
+  user: null,
+  token: null,
+};
 
-  useEffect(() => {
+const getStoredAuthState = (): AuthState => {
+  try {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+
+    if (!savedToken || !savedUser) {
+      return emptyAuthState;
     }
-  }, []);
+
+    return {
+      token: savedToken,
+      user: JSON.parse(savedUser) as User,
+    };
+  } catch {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return emptyAuthState;
+  }
+};
+
+export const useAuthState = () => {
+  const [{ user, token }, setAuthState] = useState<AuthState>(getStoredAuthState);
 
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
-    setToken(newToken);
-    setUser(newUser);
+    setAuthState({ token: newToken, user: newUser });
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
+    setAuthState(emptyAuthState);
   };
 
   return {
