@@ -53,6 +53,12 @@ public class UserService : IUserService
         return user != null ? ToDto(user) : null;
     }
 
+    public async Task<PagedResultDto<UserDto>> GetAllAsync(int page, int pageSize)
+    {
+        var (items, totalCount) = await _userRepository.GetPagedAsync(page, pageSize);
+        return new PagedResultDto<UserDto>(items.Select(ToDto), totalCount, page, pageSize);
+    }
+
     public async Task<UserDto?> UpdateAsync(Guid id, UpdateUserDto dto, Guid currentUserId)
     {
         if (id != currentUserId)

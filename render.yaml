@@ -1,0 +1,43 @@
+databases:
+  - name: auctiondb
+    plan: free
+    databaseName: auctiondb
+    user: auctionuser
+    postgresMajorVersion: 16
+
+services:
+  - type: web
+    name: auctionsystem-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: auctiondb
+          property: connectionString
+      - key: Jwt__Key
+        generateValue: true
+      - key: Jwt__Issuer
+        value: AuctionSystem
+      - key: Jwt__Audience
+        value: AuctionSystemUsers
+      - key: Cors__AllowedOrigins
+        sync: false
+
+  - type: web
+    name: auctionsystem-client
+    runtime: static
+    plan: free
+    buildCommand: cd client && npm ci && npm run build
+    staticPublishPath: ./client/dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

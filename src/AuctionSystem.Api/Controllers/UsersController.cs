@@ -50,6 +50,16 @@ public class UsersController : ControllerBase
         }
     }
 
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResultDto<UserDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResultDto<UserDto>>> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var result = await _userService.GetAllAsync(page, pageSize);
+        return Ok(result);
+    }
+
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

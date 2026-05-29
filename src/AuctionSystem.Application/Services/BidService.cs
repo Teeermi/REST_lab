@@ -10,11 +10,13 @@ public class BidService : IBidService
 {
     private readonly IBidRepository _bidRepository;
     private readonly IAuctionRepository _auctionRepository;
+    private readonly IUserRepository _userRepository;
 
-    public BidService(IBidRepository bidRepository, IAuctionRepository auctionRepository)
+    public BidService(IBidRepository bidRepository, IAuctionRepository auctionRepository, IUserRepository userRepository)
     {
         _bidRepository = bidRepository;
         _auctionRepository = auctionRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<BidDto> CreateAsync(Guid auctionId, CreateBidDto dto, Guid bidderId)
@@ -50,7 +52,8 @@ public class BidService : IBidService
         _auctionRepository.Update(auction);
         await _bidRepository.SaveChangesAsync();
 
-        return new BidDto(bid.Id, bid.Amount, bid.CreatedAt, bid.BidderId, "");
+        var bidder = await _userRepository.GetByIdAsync(bidderId);
+        return new BidDto(bid.Id, bid.Amount, bid.CreatedAt, bid.BidderId, bidder?.Username ?? "");
     }
 
     public async Task<IEnumerable<BidDto>> GetByAuctionIdAsync(Guid auctionId)

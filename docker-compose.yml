@@ -9,18 +9,27 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auctiondb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   api:
     build: .
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
+      - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Host=db;Database=auctiondb;Username=postgres;Password=postgres
       - Jwt__Key=SuperSecretKeyForAuctionSystemJwtAuth2024!
       - Jwt__Issuer=AuctionSystem
       - Jwt__Audience=AuctionSystemUsers
+      - Cors__AllowedOrigins=http://localhost:5173
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: on-failure
 
   client:
     build: ./client

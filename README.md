@@ -1,6 +1,6 @@
 # System Aukcyjny
 
-System aukcji internetowych zbudowany jako REST API z frontendem React.
+REST API systemu aukcyjnego z frontendem React. Architektura warstwowa (Controller → Service → Repository), JWT, paginacja, filtrowanie, sortowanie, testy jednostkowe, Docker.
 
 ## Wymagania
 
@@ -10,29 +10,26 @@ System aukcji internetowych zbudowany jako REST API z frontendem React.
 
 ## Uruchomienie
 
-### Z Docker (zalecane)
+### Docker
 
 ```bash
+cp .env.example .env
 docker-compose up --build
 ```
 
-Aplikacja będzie dostępna:
 - API: http://localhost:5000
 - Swagger: http://localhost:5000/swagger
+- Health: http://localhost:5000/health
 - Frontend: http://localhost:5173
 
 ### Ręcznie
 
-1. Uruchom PostgreSQL i utwórz bazę `auctiondb`
-
-2. Backend:
 ```bash
 cd src/AuctionSystem.Api
 dotnet ef database update --project ../AuctionSystem.Infrastructure
 dotnet run
 ```
 
-3. Frontend:
 ```bash
 cd client
 npm install
@@ -42,147 +39,19 @@ npm run dev
 ## Architektura
 
 ```
-src/
-├── AuctionSystem.Api/           # Kontrolery, middleware, konfiguracja
-├── AuctionSystem.Application/   # Serwisy, DTOs, walidatory
-├── AuctionSystem.Core/          # Encje domenowe, interfejsy repozytoriów
-└── AuctionSystem.Infrastructure/ # EF Core, implementacje repozytoriów
-
-tests/
-└── AuctionSystem.Tests/         # Testy jednostkowe (xUnit + Moq)
-
-client/                          # Frontend React + Vite + Tailwind CSS
-```
-
-## Diagram ERD
-
-```
-┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
-│     Users       │       │    Auctions     │       │      Bids       │
-├─────────────────┤       ├─────────────────┤       ├─────────────────┤
-│ Id (PK)         │       │ Id (PK)         │       │ Id (PK)         │
-│ Email           │◄──────│ OwnerId (FK)    │       │ Amount          │
-│ Username        │   1:N │ Title           │◄──────│ AuctionId (FK)  │
-│ PasswordHash    │       │ Description     │   1:N │ BidderId (FK)   │──────►
-│ CreatedAt       │       │ Category        │       │ CreatedAt       │
-└─────────────────┘       │ StartingPrice   │       └─────────────────┘
-        │                 │ CurrentPrice    │
-        │                 │ StartDate       │
-        │                 │ EndDate         │
-        │     N:1         │ Status          │
-        └─────────────────┴─────────────────┘
-```
-
-**Relacje:**
-- User 1:N Auction (właściciel aukcji)
-- User 1:N Bid (licytujący)
-- Auction 1:N Bid (oferty w aukcji)
-
-## API Endpoints
-
-### Użytkownicy
-
-| Metoda | Endpoint | Opis | Auth |
-|--------|----------|------|------|
-| POST | `/api/users` | Rejestracja nowego użytkownika | - |
-| POST | `/api/users/login` | Logowanie (zwraca JWT) | - |
-| GET | `/api/users/{id}` | Pobranie profilu użytkownika | - |
-| PUT | `/api/users/{id}` | Aktualizacja profilu | JWT |
-| DELETE | `/api/users/{id}` | Usunięcie konta | JWT |
-
-### Aukcje
-
-| Metoda | Endpoint | Opis | Auth |
-|--------|----------|------|------|
-| GET | `/api/auctions` | Lista aukcji (z paginacją, filtrowaniem, sortowaniem) | - |
-| GET | `/api/auctions/{id}` | Szczegóły aukcji z historią ofert | - |
-| POST | `/api/auctions` | Utworzenie nowej aukcji | JWT |
-| PUT | `/api/auctions/{id}` | Edycja aukcji (tylko właściciel) | JWT |
-| DELETE | `/api/auctions/{id}` | Usunięcie aukcji (tylko właściciel) | JWT |
-
-### Oferty (Bids)
-
-| Metoda | Endpoint | Opis | Auth |
-|--------|----------|------|------|
-| GET | `/api/auctions/{id}/bids` | Historia ofert aukcji | - |
-| POST | `/api/auctions/{id}/bids` | Złożenie oferty | JWT |
-
-### Parametry filtrowania (GET /api/auctions)
-
-- `page` - numer strony (domyślnie 1)
-- `pageSize` - liczba elementów na stronie (domyślnie 10)
-- `category` - filtrowanie po kategorii (0-4)
-- `status` - filtrowanie po statusie (0-3)
-- `sortBy` - sortowanie: `price`, `price_desc`, `date`, `date_desc`
-
-### Kody odpowiedzi HTTP
-
-- `200 OK` - sukces (GET, PUT)
-- `201 Created` - zasób utworzony (POST)
-- `204 No Content` - sukces bez treści (DELETE)
-- `400 Bad Request` - błąd walidacji
-- `401 Unauthorized` - brak/nieprawidłowy token JWT
-- `403 Forbidden` - brak uprawnień
-- `404 Not Found` - zasób nie istnieje
-
-## Kategorie
-
-| ID | Nazwa |
-|----|-------|
-| 0 | Elektronika |
-| 1 | Moda |
-| 2 | Dom |
-| 3 | Sport |
-| 4 | Inne |
-
-## Statusy aukcji
-
-| ID | Nazwa |
-|----|-------|
-| 0 | Szkic |
-| 1 | Aktywna |
-| 2 | Zakończona |
-| 3 | Anulowana |
-
-## Technologie
-
-**Backend:**
-- ASP.NET Core 10
-- Entity Framework Core + PostgreSQL
-- JWT Authentication
-- FluentValidation
-- Serilog (logowanie)
-- Swagger/OpenAPI
-
-**Frontend:**
-- React 19
-- Vite
-- Tailwind CSS
-- Axios
-- React Router
-
-**Testy:**
-- xUnit
-- Moq
-
-**DevOps:**
-- Docker
-- Docker Compose
-
-## Testy
-
-```bash
-dotnet test
-```
-
-## Struktura projektu
-
-```
 REST_lab/
 ├── AuctionSystem.slnx
-├── docker-compose.yml
 ├── Dockerfile
-├── README.md
+├── docker-compose.yml
+├── render.yaml
+├── fly.toml
+├── .env.example
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── docs/
+│   ├── erd.png
+│   └── generate_erd.py
 ├── src/
 │   ├── AuctionSystem.Api/
 │   │   ├── Controllers/
@@ -191,7 +60,8 @@ REST_lab/
 │   │   ├── Middleware/
 │   │   │   └── ExceptionHandlingMiddleware.cs
 │   │   ├── Program.cs
-│   │   └── appsettings.json
+│   │   ├── appsettings.json
+│   │   └── appsettings.Production.json
 │   ├── AuctionSystem.Application/
 │   │   ├── DTOs/
 │   │   ├── Interfaces/
@@ -208,6 +78,8 @@ REST_lab/
 ├── tests/
 │   └── AuctionSystem.Tests/
 └── client/
+    ├── Dockerfile
+    ├── nginx.conf
     └── src/
         ├── api/
         ├── components/
@@ -215,3 +87,120 @@ REST_lab/
         ├── pages/
         └── types/
 ```
+
+Core nie zależy od Infrastructure ani Api. Application korzysta z interfejsów z Core. DI w `Program.cs`.
+
+## Diagram ERD
+
+![ERD](docs/erd.png)
+
+Regeneracja:
+
+```bash
+python3 -m pip install matplotlib
+python3 docs/generate_erd.py
+```
+
+Relacje:
+- `User 1:N Auction` (OwnerId, cascade)
+- `Auction 1:N Bid` (AuctionId, cascade)
+- `User 1:N Bid` (BidderId, restrict)
+
+## API
+
+### Użytkownicy
+
+| Metoda | Endpoint | Auth |
+|--------|----------|------|
+| POST | `/api/users` | - |
+| POST | `/api/users/login` | - |
+| GET | `/api/users` | - |
+| GET | `/api/users/{id}` | - |
+| PUT | `/api/users/{id}` | JWT |
+| DELETE | `/api/users/{id}` | JWT |
+
+### Aukcje
+
+| Metoda | Endpoint | Auth |
+|--------|----------|------|
+| GET | `/api/auctions` | - |
+| GET | `/api/auctions/{id}` | - |
+| POST | `/api/auctions` | JWT |
+| PUT | `/api/auctions/{id}` | JWT |
+| DELETE | `/api/auctions/{id}` | JWT |
+
+### Oferty
+
+| Metoda | Endpoint | Auth |
+|--------|----------|------|
+| GET | `/api/auctions/{id}/bids` | - |
+| POST | `/api/auctions/{id}/bids` | JWT |
+
+### Pozostałe
+
+- `GET /health` — status API + bazy
+- `GET /swagger` — OpenAPI
+
+### Parametry `GET /api/auctions`
+
+- `page` (1)
+- `pageSize` (10)
+- `category` (0–4)
+- `status` (0–3)
+- `sortBy` — `price`, `price_desc`, `date`, `date_desc`
+
+### Kody HTTP
+
+- `200` — sukces
+- `201` — utworzono
+- `204` — usunięto
+- `400` — błąd walidacji / reguły biznesowej
+- `401` — brak / zły token
+- `403` — brak uprawnień
+- `404` — nie znaleziono
+
+## Słowniki
+
+Kategorie: `0 Elektronika` · `1 Moda` · `2 Dom` · `3 Sport` · `4 Inne`
+
+Statusy: `0 Szkic` · `1 Aktywna` · `2 Zakończona` · `3 Anulowana`
+
+## Technologie
+
+Backend: ASP.NET Core 10, EF Core, PostgreSQL, JWT + BCrypt, FluentValidation, Serilog, Swagger, Health Checks
+Frontend: React 19, Vite, Tailwind, Axios, React Router
+Testy: xUnit, Moq
+DevOps: Docker, Docker Compose, GitHub Actions
+
+## Testy
+
+```bash
+dotnet test
+```
+
+## Deployment
+
+Konfiguracja gotowa pod hosting kontenerowy (Render, Fly.io, Railway).
+
+- `PORT` z env (`Program.cs`)
+- `UseForwardedHeaders` pod reverse proxy
+- `/health` z `AddDbContextCheck`
+- Migracje przy starcie w `Production`
+- CORS z env `Cors__AllowedOrigins`
+- Sekrety z env (`Jwt__Key`, `ConnectionStrings__DefaultConnection`)
+- `render.yaml`, `fly.toml`
+- CI: `.github/workflows/ci.yml`
+
+Render: Blueprint → wybierz repo. Render czyta `render.yaml`.
+
+Fly.io:
+```bash
+fly launch --no-deploy
+fly postgres create --name auctiondb
+fly postgres attach auctiondb
+fly secrets set Jwt__Key="$(openssl rand -base64 48)"
+fly secrets set Cors__AllowedOrigins="https://..."
+fly deploy
+```
+
+Zmienne środowiskowe: `.env.example`.

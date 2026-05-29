@@ -11,7 +11,10 @@ public class AuctionRepository : Repository<Auction>, IAuctionRepository
     public AuctionRepository(AppDbContext context) : base(context) { }
 
     public async Task<Auction?> GetWithBidsAsync(Guid id)
-        => await _dbSet.Include(a => a.Bids).Include(a => a.Owner).FirstOrDefaultAsync(a => a.Id == id);
+        => await _dbSet
+            .Include(a => a.Owner)
+            .Include(a => a.Bids).ThenInclude(b => b.Bidder)
+            .FirstOrDefaultAsync(a => a.Id == id);
 
     public async Task<IEnumerable<Auction>> GetByStatusAsync(AuctionStatus status)
         => await _dbSet.Where(a => a.Status == status).ToListAsync();

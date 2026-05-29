@@ -11,13 +11,15 @@ public class BidServiceTests
 {
     private readonly Mock<IBidRepository> _bidRepoMock;
     private readonly Mock<IAuctionRepository> _auctionRepoMock;
+    private readonly Mock<IUserRepository> _userRepoMock;
     private readonly BidService _service;
 
     public BidServiceTests()
     {
         _bidRepoMock = new Mock<IBidRepository>();
         _auctionRepoMock = new Mock<IAuctionRepository>();
-        _service = new BidService(_bidRepoMock.Object, _auctionRepoMock.Object);
+        _userRepoMock = new Mock<IUserRepository>();
+        _service = new BidService(_bidRepoMock.Object, _auctionRepoMock.Object, _userRepoMock.Object);
     }
 
     [Fact]
@@ -110,11 +112,14 @@ public class BidServiceTests
 
         _auctionRepoMock.Setup(r => r.GetByIdAsync(auction.Id))
             .ReturnsAsync(auction);
+        _userRepoMock.Setup(r => r.GetByIdAsync(bidderId))
+            .ReturnsAsync(new User { Id = bidderId, Username = "bidder1" });
 
         var result = await _service.CreateAsync(auction.Id, new CreateBidDto(150), bidderId);
 
         Assert.Equal(150, result.Amount);
         Assert.Equal(bidderId, result.BidderId);
+        Assert.Equal("bidder1", result.BidderUsername);
         _bidRepoMock.Verify(r => r.AddAsync(It.IsAny<Bid>()), Times.Once);
         _bidRepoMock.Verify(r => r.SaveChangesAsync(), Times.Once);
     }
